@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class Configuration {
+    private int totalTickets;
     private int ticketsPerRelease;
     private int ticketReleaseInterval;
     private int customerRetrievalInterval;
@@ -15,9 +16,10 @@ public class Configuration {
     private boolean debug;  // Debug flag
 
     // Constructor with validation
-    public Configuration(int totalTickets, int ticketReleaseRate, int customerRetrievalRate,
+    public Configuration(int totalTickets, int ticketsPerRelease, int ticketReleaseRate, int customerRetrievalRate,
                          int maxTicketCapacity, int vendorCount, int customerCount, boolean debug) {
-        this.ticketsPerRelease = totalTickets;
+        this.totalTickets = totalTickets;
+        this.ticketsPerRelease = ticketsPerRelease;
         this.ticketReleaseInterval = ticketReleaseRate;
         this.customerRetrievalInterval = customerRetrievalRate;
         this.maxTicketCapacity = maxTicketCapacity;
@@ -27,6 +29,10 @@ public class Configuration {
     }
 
     // Getters for all fields
+    public int getTotalTickets() {
+        return totalTickets;
+    }
+
     public int getTicketsPerRelease() {
         return ticketsPerRelease;
     }

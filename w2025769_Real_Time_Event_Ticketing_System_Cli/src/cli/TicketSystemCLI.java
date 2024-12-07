@@ -1,11 +1,18 @@
 package cli;
+
 import java.util.Scanner;
 import config.Configuration;
+import threads.Vendor;
+import threads.Customer;
+import core.TicketPool;
 
 public class TicketSystemCLI {
+    private static boolean isRunning = false; // Flag to indicate if the system is running
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Configuration config = null;
+        TicketPool ticketPool = null;
 
         try {
             // Print the welcome message
@@ -42,11 +49,13 @@ public class TicketSystemCLI {
                     System.out.println("Invalid choice. Exiting.");
                     return;
             }
+
             // Saving New configuration
             config.saveConfig();
 
             // Display the loaded or created configuration
             System.out.println("\nConfiguration Details:");
+            System.out.println("Total Ticket Count: " + config.getTotalTickets());
             System.out.println("Max Ticket Capacity: " + config.getMaxTicketCapacity());
             System.out.println("Tickets Per Release: " + config.getTicketsPerRelease());
             System.out.println("Ticket Release Interval: " + config.getTicketReleaseInterval());
@@ -56,37 +65,71 @@ public class TicketSystemCLI {
             if (config.isDebug()) {
                 System.out.println("Debug: " + (config.isDebug() ? "Enabled" : "Disabled"));
             }
+
+            // Initialize TicketPool
+            ticketPool = new TicketPool(config.getMaxTicketCapacity(), config.isDebug());
+
+            // Ask the user to start, stop, or exit the simulation
+            while (true) {
+                System.out.println("\nWhat would you like to do?");
+                System.out.println("1. Start the system");
+                System.out.println("2. Stop the system");
+                System.out.println("3. Exit the system");
+                System.out.print("Enter your choice (1, 2, or 3): ");
+                int actionChoice = scanner.nextInt();
+                scanner.nextLine(); // Consume the newline character
+
+                switch (actionChoice) {
+                    case 1:
+                        if (!isRunning) {
+                            startSystem(config, ticketPool);
+                        } else {
+                            System.out.println("The system is already running.");
+                        }
+                        break;
+
+                    case 2:
+                        if (isRunning) {
+                            stopSystem();
+                        } else {
+                            System.out.println("The system is not running.");
+                        }
+                        break;
+
+                    case 3:
+                        if (isRunning) {
+                            stopSystem();
+                        }
+                        System.out.println("Exiting the system...");
+                        scanner.close();
+                        return;
+
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            }
         } catch (Exception e) {
             // Handle any unexpected errors
             System.out.println("An unexpected error occurred: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            scanner.close();
         }
     }
 
     // Function to create a new configuration
     private static Configuration createNewConfiguration(Scanner scanner) {
-        // Create a new configuration
         System.out.println("\nEnter the following details for the new configuration:");
 
-        // Get max ticket capacity
-        int maxTicketCapacity = getValidatedInput(scanner, "Max Ticket Capacity : ", 1, Integer.MAX_VALUE);
-        // Get tickets per release
-        int ticketsPerRelease = getValidatedInput(scanner, "Tickets Per Release : ", 0, Integer.MAX_VALUE);
-        // Get ticket release interval
+        int totalTickets = getValidatedInput(scanner, "Total Ticket Count : ", 1, Integer.MAX_VALUE);
+        int maxTicketCapacity = getValidatedInput(scanner, "Max Ticket Pool Capacity : ", 1, Integer.MAX_VALUE);
         int ticketReleaseInterval = getValidatedInput(scanner, "Ticket Release Interval (in seconds) : ", 1, Integer.MAX_VALUE);
-        // Get customer retrieval interval
+        int ticketsPerRelease = getValidatedInput(scanner, "Tickets Per Release : ", 0, Integer.MAX_VALUE);
         int customerRetrievalInterval = getValidatedInput(scanner, "Customer Retrieval Interval (in seconds) : ", 1, Integer.MAX_VALUE);
-        // Get vendor count
         int vendorCount = getValidatedInput(scanner, "Vendor Count (at least 1) : ", 1, Integer.MAX_VALUE);
-        // Get customer count
         int customerCount = getValidatedInput(scanner, "Customer Count (at least 1): ", 1, Integer.MAX_VALUE);
 
         boolean debug = false;
 
-        // Create the configuration object
-        return new Configuration(ticketsPerRelease, ticketReleaseInterval, customerRetrievalInterval, maxTicketCapacity, vendorCount, customerCount, debug);
+        return new Configuration(totalTickets ,ticketsPerRelease, ticketReleaseInterval, customerRetrievalInterval, maxTicketCapacity, vendorCount, customerCount, debug);
     }
 
     // Helper function to get validated user input
@@ -112,5 +155,48 @@ public class TicketSystemCLI {
             }
         }
         return input;
+    }
+
+    // Function to start the system (initialize and start vendor/customer threads)
+    private static void startSystem(Configuration config, TicketPool ticketPool) {
+        isRunning = true;
+
+        // Calculate tickets per vendor ( remainder handled by the last vendor)
+        int totalTickets = config.getTotalTickets(); // Assume total tickets = tickets per release * vendor count
+        int ticketsPerVendor = totalTickets / config.getVendorCount();  // Base number of tickets per vendor
+        int remainingTickets = totalTickets % config.getVendorCount();  // Remainder tickets
+
+        // Create and start vendor threads
+        for (int i = 0; i < config.getVendorCount(); i++) {
+            String vendorId = "Vendor-" + (i + 1);
+
+            int ticketsForThisVendor;
+            // If it's the last vendor, give the remaining tickets
+            if (i == config.getVendorCount() - 1) {
+                ticketsForThisVendor = ticketsPerVendor + remainingTickets;
+            } else {
+                ticketsForThisVendor = ticketsPerVendor;
+            }
+
+            Vendor vendor = new Vendor(ticketPool, vendorId, ticketsForThisVendor, config.getTicketsPerRelease(), config.getTicketReleaseInterval());
+            new Thread(vendor, vendorId).start();
+        }
+
+        // Create and start customer threads
+        for (int i = 0; i < config.getCustomerCount(); i++) {
+            String customerId = "Customer-" + (i + 1);
+            Customer customer = new Customer(ticketPool, customerId, config.getCustomerRetrievalInterval());
+            new Thread(customer, customerId).start();
+        }
+
+        System.out.println("System started! Vendors and customers are now active.");
+    }
+
+
+    // Function to stop the system (interrupt threads)
+    private static void stopSystem() {
+        isRunning = false;
+        System.out.println("System is being stopped...");
+        // logic to stop all vendor and customer threads here if needed.
     }
 }
