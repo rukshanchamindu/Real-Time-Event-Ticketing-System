@@ -8,11 +8,11 @@ public class TicketSystemCLI {
         Configuration config = null;
 
         try {
-            // Step 1: Print the welcome message
+            // Print the welcome message
             System.out.println("Welcome to the Ticketing System!");
             System.out.println("=================================");
 
-            // Step 2: Ask the user if they want to load an old config or create a new one
+            // Ask the user if they want to load an old config or create a new one
             System.out.println("\nDo you want to load an existing configuration or create a new one?");
             System.out.println("1. Load existing configuration");
             System.out.println("2. Create new configuration");
@@ -42,8 +42,10 @@ public class TicketSystemCLI {
                     System.out.println("Invalid choice. Exiting.");
                     return;
             }
+            // Saving New configuration
+            config.saveConfig();
 
-            // Step 4: Display the loaded or created configuration
+            // Display the loaded or created configuration
             System.out.println("\nConfiguration Details:");
             System.out.println("Max Ticket Capacity: " + config.getMaxTicketCapacity());
             System.out.println("Tickets Per Release: " + config.getTicketsPerRelease());
