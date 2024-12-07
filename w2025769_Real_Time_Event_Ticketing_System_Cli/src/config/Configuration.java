@@ -56,7 +56,8 @@ public class Configuration {
     }
 
     // Save configuration to a JSON file and return whether it was successful
-    public boolean saveConfig(String fileName) {
+    public boolean saveConfig() {
+        String fileName = "config.json";
         Gson gson = new Gson();
         try (FileWriter writer = new FileWriter(fileName)) {
             gson.toJson(this, writer);  // Convert the object into JSON and write it to the file
@@ -74,7 +75,8 @@ public class Configuration {
     }
 
     // Load configuration from a JSON file
-    public static Configuration loadConfig(String fileName) {
+    public static Configuration loadConfig() {
+        String fileName = "config.json";
         Gson gson = new Gson();
         Configuration config = null;
 

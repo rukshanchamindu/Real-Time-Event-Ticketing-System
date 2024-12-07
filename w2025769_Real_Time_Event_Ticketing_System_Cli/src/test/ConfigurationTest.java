@@ -19,11 +19,11 @@ public class ConfigurationTest {
         );
 
         // Save the configuration to a file
-        String configFileName = "config.json";
-        boolean saveSuccess = config.saveConfig(configFileName);
+
+        boolean saveSuccess = config.saveConfig();
 
         if (saveSuccess) {
-            System.out.println("Configuration saved successfully to " + configFileName);
+            System.out.println("Configuration saved successfully");
         } else {
             System.out.println("Failed to save configuration.");
             return;  // Exit if save failed
@@ -31,7 +31,7 @@ public class ConfigurationTest {
 
         // Test Loading Configuration: Load the configuration from the file
         System.out.println("\nLoading configuration...");
-        Configuration loadedConfig = Configuration.loadConfig(configFileName);
+        Configuration loadedConfig = Configuration.loadConfig();
 
         if (loadedConfig == null) {
             System.out.println("Failed to load configuration.");
@@ -57,16 +57,5 @@ public class ConfigurationTest {
             System.out.println("Configuration is invalid.");
         }
 
-        // Optional: Clean up by deleting the test configuration file
-        try {
-            File configFile = new File(configFileName);
-            if (configFile.delete()) {
-                System.out.println("\nTest file deleted successfully.");
-            } else {
-                System.out.println("\nFailed to delete test file.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
