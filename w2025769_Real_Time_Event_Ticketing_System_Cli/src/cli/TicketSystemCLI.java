@@ -1,6 +1,8 @@
 package cli;
 
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 import config.Configuration;
 import threads.Vendor;
 import threads.Customer;
@@ -8,6 +10,8 @@ import core.TicketPool;
 
 public class TicketSystemCLI {
     private static boolean isRunning = false; // Flag to indicate if the system is running
+    private static List<Thread> vendorThreads = new ArrayList<>();
+    private static List<Thread> customerThreads = new ArrayList<>();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -171,7 +175,6 @@ public class TicketSystemCLI {
             String vendorId = "Vendor-" + (i + 1);
 
             int ticketsForThisVendor;
-            // If it's the last vendor, give the remaining tickets
             if (i == config.getVendorCount() - 1) {
                 ticketsForThisVendor = ticketsPerVendor + remainingTickets;
             } else {
@@ -179,14 +182,18 @@ public class TicketSystemCLI {
             }
 
             Vendor vendor = new Vendor(ticketPool, vendorId, ticketsForThisVendor, config.getTicketsPerRelease(), config.getTicketReleaseInterval());
-            new Thread(vendor, vendorId).start();
+            Thread vendorThread = new Thread(vendor, vendorId);
+            vendorThread.start();
+            vendorThreads.add(vendorThread);
         }
 
         // Create and start customer threads
         for (int i = 0; i < config.getCustomerCount(); i++) {
             String customerId = "Customer-" + (i + 1);
             Customer customer = new Customer(ticketPool, customerId, config.getCustomerRetrievalInterval());
-            new Thread(customer, customerId).start();
+            Thread customerThread = new Thread(customer, customerId);
+            customerThread.start();
+            customerThreads.add(customerThread);
         }
 
         System.out.println("System started! Vendors and customers are now active.");
@@ -196,7 +203,15 @@ public class TicketSystemCLI {
     // Function to stop the system (interrupt threads)
     private static void stopSystem() {
         isRunning = false;
-        System.out.println("System is being stopped...");
-        // logic to stop all vendor and customer threads here if needed.
+
+        // Interrupt the threads
+        for (Thread vendorThread : vendorThreads) {
+            vendorThread.interrupt();  // Interrupt vendor thread
+        }
+        for (Thread customerThread : customerThreads) {
+            customerThread.interrupt();  // Interrupt customer thread
+        }
+
+        System.out.println("System stopped successfully.");
     }
 }

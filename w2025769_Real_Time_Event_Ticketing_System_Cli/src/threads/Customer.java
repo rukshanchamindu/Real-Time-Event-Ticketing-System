@@ -1,6 +1,7 @@
 package threads;
 import core.TicketPool;
 import core.Ticket;
+
 public class Customer implements Runnable {
     private final TicketPool ticketPool;
     private final String customerId;      // Unique customer identifier
@@ -41,7 +42,10 @@ public class Customer implements Runnable {
                 Thread.sleep(retrievalInterval*1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();  // Handle interruption
+                // Once the vendor thread exits, log its termination
+                System.out.println("Customer " + customerId + " is no longer active.");
             }
         }
+
     }
 }
