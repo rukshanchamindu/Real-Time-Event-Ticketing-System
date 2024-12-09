@@ -5,7 +5,7 @@ const SplashScreen = ({ onSplashEnd }) => {
     useEffect(() => {
         const timer = setTimeout(() => {
             onSplashEnd();  // Hide splash screen after 3 seconds
-        }, 3000);
+        }, 500);
         return () => clearTimeout(timer);  // Clean up the timer when the component unmounts
     }, [onSplashEnd]);
 
