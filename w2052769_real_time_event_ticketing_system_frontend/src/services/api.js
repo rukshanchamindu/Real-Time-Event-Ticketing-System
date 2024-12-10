@@ -1,47 +1,65 @@
 // src/services/api.js
 
-// Simulated function to load configuration from API (already existing)
+import axios from 'axios';
+
+// Base URL for the API (assuming backend is running on localhost:8080)
+const API_BASE_URL = 'http://localhost:8080/api/ticket-system';
+
+// Fetch the configuration from the backend
 export const loadConfigFromAPI = async () => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                maxTicketCapacity: 500,
-                ticketsPerRelease: 10,
-                ticketReleaseInterval: 5,
-                customerRetrievalInterval: 2,
-                vendorCount: 3,
-                customerCount: 10,
-            });
-        }, 2000);  // Simulate a 2-second delay for loading the config
-    });
+    try {
+        const response = await axios.get(`${API_BASE_URL}/config/get`);
+        return response.data;  // Return the configuration data
+    } catch (error) {
+        console.error('Error loading configuration:', error);
+        throw error;  // Rethrow the error for further handling
+    }
 };
 
-// Simulated function to post configuration to an API
+// Post the configuration data to the backend
 export const postConfigToAPI = async (configData) => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Simulate a successful API response after posting the data
-            console.log("Posting config to API:", configData);
-            resolve({ status: 'success', data: configData });  // Simulate a successful response
-        }, 2000);  // Simulate a 2-second delay for posting the data
-    });
+    try {
+        const response = await axios.post(`${API_BASE_URL}/config/set`, configData, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;  // Return the response message or data
+    } catch (error) {
+        console.error('Error posting configuration:', error);
+        throw error;  // Rethrow the error for further handling
+    }
 };
 
-// Simulated function to fetch logs from an API
+// Fetch recent logs from the backend
 export const fetchLogsFromAPI = async () => {
-    const logs = [
-        "System started successfully.",
-        "Configuration loaded from API.",
-        "Vendor 1 added 10 tickets.",
-        "Customer 1 purchased a ticket.",
-        "System is running smoothly.",
-    ];
+    try {
+        const response = await axios.get(`${API_BASE_URL}/recent`);
+        return response.data;  // Return the logs from the backend
+    } catch (error) {
+        console.error('Error fetching logs:', error);
+        throw error;  // Rethrow the error for further handling
+    }
+};
 
-    // Simulate getting new logs
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const randomLog = logs[Math.floor(Math.random() * logs.length)];
-            resolve([randomLog]);  // Return one random log message at a time
-        }, 1000);  // Simulate a 1-second delay for fetching logs
-    });
+// Start the system by making a POST request to the backend
+export const startSystemAPI = async () => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/system/start`);
+        return response.data;  // Return the success message
+    } catch (error) {
+        console.error('Error starting the system:', error);
+        throw error;  // Rethrow the error for further handling
+    }
+};
+
+// Stop the system by making a POST request to the backend
+export const stopSystemAPI = async () => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/system/stop`);
+        return response.data;  // Return the success message
+    } catch (error) {
+        console.error('Error stopping the system:', error);
+        throw error;  // Rethrow the error for further handling
+    }
 };

@@ -1,100 +1,128 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ConfigForm from './components/ConfigForm';  // Import the form component
 import SplashScreen from './components/SplashScreen';  // Import the splash screen component
-import { postConfigToAPI, fetchLogsFromAPI } from './services/api';  // Import API service
+import { postConfigToAPI, fetchLogsFromAPI, startSystemAPI, stopSystemAPI } from './services/api'; 
 import LogStream from './components/LogStream';  // Import the LogStream component
+import ConfigurationDetails from './components/ConfigurationDetails';  // Import the ConfigurationDetails component
+import Popup from './components/Popup';  // Import Popup component
+import Buttons from './components/Buttons';  // Import the Buttons component
 
 const App = () => {
-    const [showSplash, setShowSplash] = useState(true);  // State to control splash screen visibility
-    const [configData, setConfigData] = useState(null);  // State to store the configuration data
-    const [isSystemStarted, setIsSystemStarted] = useState(false);  // Track if the system is started
-    const [logs, setLogs] = useState([]);  // State to store logs
+    const [showSplash, setShowSplash] = useState(true);
+    const [configData, setConfigData] = useState(null);
+    const [isSystemStarted, setIsSystemStarted] = useState(false);
+    const [logs, setLogs] = useState([]);
+    const [popup, setPopup] = useState({ isOpen: false, type: '', message: '' });
+    const [loading, setLoading] = useState(false);  // Track loading state
 
-    // Handle configuration submission
     const handleConfigSubmit = async (data) => {
         setConfigData(data);
         console.log('Form Submitted:', data);
 
-        // Post the config to the API
         try {
             const response = await postConfigToAPI(data);
             console.log('Config posted to API:', response);
         } catch (error) {
-            console.error('Error posting config:', error);
+            showPopup('error', 'Error posting config');
         }
     };
 
-    // Fetch logs every 1 second (sped up log fetching)
     const simulateLogUpdates = async () => {
         try {
-            const newLogs = await fetchLogsFromAPI();  // Get logs from the simulated API
+            const newLogs = await fetchLogsFromAPI();  // Fetch new logs from API
             setLogs((prevLogs) => [...prevLogs, ...newLogs]);
         } catch (error) {
-            console.error('Error fetching logs:', error);
+            showPopup('error', 'Error fetching logs');
         }
     };
 
-    // Handle system start
-    const handleStartSystem = () => {
-        setIsSystemStarted(true);
-        console.log('System Started');
-        // Start fetching logs
-        setInterval(simulateLogUpdates, 1000);  // Fetch logs every 1 second
+    const handleStartSystem = async () => {
+        showPopup('loading', 'Starting system...');  // Show loading popup
+        setLoading(true);
+
+        try {
+            const response = await startSystemAPI();  // Call API to start the system
+            if (response) {
+                setIsSystemStarted(true);
+                showPopup('info', 'System Started Successfully');
+                setInterval(simulateLogUpdates, 1000);  // Start fetching logs
+            }
+        } catch (error) {
+            showPopup('error', 'Error starting system');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Handle system stop
-    const handleStopSystem = () => {
-        setIsSystemStarted(false);
-        console.log('System Stopped');
+    const handleStopSystem = async () => {
+        showPopup('loading', 'Stopping system...');  // Show loading popup
+        setLoading(true);
+
+        try {
+            const response = await stopSystemAPI();  // Call API to stop the system
+            if (response) {
+                setIsSystemStarted(false);
+                showPopup('info', 'System Stopped');
+            }
+        } catch (error) {
+            showPopup('error', 'Error stopping system');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Handle splash screen end
+    const showPopup = (type, message) => {
+        setPopup({ isOpen: true, type, message });
+        setTimeout(() => {
+            setPopup({ isOpen: false, type: '', message: '' });  // Close the popup after 3 seconds
+        }, 3000);
+    };
+
     const handleSplashEnd = () => {
-        setShowSplash(false);  // Hide the splash screen after 3 seconds
+        setShowSplash(false);
     };
+
+    // Handle page unload (tab close / refresh)
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (isSystemStarted) {
+                stopSystemAPI(); // Stop the system when the page is being unloaded
+            }
+            return undefined;  // Necessary to ensure the unload event works properly
+        };
+
+        // Attach the unload event listener
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        // Cleanup the event listener when the component is unmounted
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isSystemStarted]);
 
     return (
         <div className="App">
+            {popup.isOpen && (
+                <Popup type={popup.type} message={popup.message} onClose={() => setPopup({ isOpen: false, type: '', message: '' })} />
+            )}
+
             {showSplash ? (
-                <SplashScreen onSplashEnd={handleSplashEnd} />  // Show splash screen
+                <SplashScreen onSplashEnd={handleSplashEnd} />
             ) : (
                 <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
                     {!configData ? (
                         <ConfigForm onSubmit={handleConfigSubmit} />
                     ) : (
                         <>
-                            <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
-                                <h2 className="text-xl font-bold mb-4">Configuration Details</h2>
-                                <div>
-                                    <p><strong>Max Ticket Capacity:</strong> {configData.maxTicketCapacity}</p>
-                                    <p><strong>Tickets Per Release:</strong> {configData.ticketsPerRelease}</p>
-                                    <p><strong>Ticket Release Interval (in seconds):</strong> {configData.ticketReleaseInterval}</p>
-                                    <p><strong>Customer Retrieval Interval (in seconds):</strong> {configData.customerRetrievalInterval}</p>
-                                    <p><strong>Vendor Count:</strong> {configData.vendorCount}</p>
-                                    <p><strong>Customer Count:</strong> {configData.customerCount}</p>
-                                </div>
-                            </div>
+                            <ConfigurationDetails configData={configData} />
 
-                            <div className="flex space-x-4">
-                                <button
-                                    onClick={handleStartSystem}
-                                    className={`px-4 py-2 ${isSystemStarted ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md`}
-                                    disabled={isSystemStarted}
-                                >
-                                    Start System
-                                </button>
-
-                                <button
-                                    onClick={handleStopSystem}
-                                    className={`px-4 py-2 ${!isSystemStarted ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'} text-white rounded-md`}
-                                    disabled={!isSystemStarted}
-                                >
-                                    Stop System
-                                </button>
-                            </div>
-
-                            {/* Add some space below the buttons */}
-                            <div className="my-6"></div>
+                            {/* Buttons Component */}
+                            <Buttons 
+                                isSystemStarted={isSystemStarted} 
+                                onStart={handleStartSystem} 
+                                onStop={handleStopSystem} 
+                                loading={loading} 
+                            />
 
                             {/* Only show LogStream if system is started */}
                             {isSystemStarted && <LogStream logs={logs} />}

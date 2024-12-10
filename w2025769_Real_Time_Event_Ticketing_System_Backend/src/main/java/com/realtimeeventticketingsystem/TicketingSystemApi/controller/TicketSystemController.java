@@ -9,6 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/ticket-system")
+@CrossOrigin(origins = "http://localhost:3000")  // Allow CORS for this controller from localhost:3000
 public class TicketSystemController {
 
     @Autowired
