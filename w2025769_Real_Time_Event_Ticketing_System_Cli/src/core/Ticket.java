@@ -1,11 +1,10 @@
 package core;
 
-public  class Ticket {
-    private static int ticketIdCounter = 1;
-    private final int ticketId;
+public class Ticket {
+    private final int ticketId;  // Unique ticket ID assigned by TicketPool
 
-    public Ticket() {
-        this.ticketId = ticketIdCounter++;  // Assign a unique ticket ID
+    public Ticket(int ticketId) {
+        this.ticketId = ticketId;  // Assign the ticket ID provided by TicketPool
     }
 
     public int getTicketId() {

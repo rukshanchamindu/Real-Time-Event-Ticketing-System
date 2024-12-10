@@ -7,19 +7,21 @@ import config.Configuration;
 import threads.Vendor;
 import threads.Customer;
 import core.TicketPool;
+import logger.LoggerService;  // Import the LoggerService
 
 public class TicketSystemCLI {
     private static boolean isRunning = false; // Flag to indicate if the system is running
     private static List<Thread> vendorThreads = new ArrayList<>();
     private static List<Thread> customerThreads = new ArrayList<>();
+    private static Configuration config = null;
+    private static TicketPool ticketPool = null;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        Configuration config = null;
-        TicketPool ticketPool = null;
 
         try {
             // Print the welcome message
+            LoggerService.log("Welcome to the Ticketing System!");
             System.out.println("Welcome to the Ticketing System!");
             System.out.println("=================================");
 
@@ -31,31 +33,36 @@ public class TicketSystemCLI {
             int choice = scanner.nextInt();
             scanner.nextLine();
 
-            // Step 3: Use switch-case to handle user choice
+            // Use switch-case to handle user choice
             switch (choice) {
                 case 1:
                     config = Configuration.loadConfig();
 
                     if (config == null) {
                         System.out.println("Invalid configuration loaded. Please provide a new configuration.");
+                        LoggerService.log("Invalid configuration loaded.");
                         config = createNewConfiguration(scanner);
                     } else {
                         System.out.println("Loaded configuration successfully!");
+                        LoggerService.log("Loaded configuration successfully.");
                     }
                     break;
 
                 case 2:
                     // Create a new configuration
                     config = createNewConfiguration(scanner);
+                    LoggerService.log("Created new configuration.");
                     break;
 
                 default:
                     System.out.println("Invalid choice. Exiting.");
+                    LoggerService.log("Invalid choice entered. Exiting.");
                     return;
             }
 
             // Saving New configuration
             config.saveConfig();
+            LoggerService.log("Configuration saved.");
 
             // Display the loaded or created configuration
             System.out.println("\nConfiguration Details:");
@@ -70,9 +77,6 @@ public class TicketSystemCLI {
                 System.out.println("Debug: " + (config.isDebug() ? "Enabled" : "Disabled"));
             }
 
-            // Initialize TicketPool
-            ticketPool = new TicketPool(config.getMaxTicketCapacity(), config.isDebug());
-
             // Ask the user to start, stop, or exit the simulation
             while (true) {
                 System.out.println("\nWhat would you like to do?");
@@ -86,15 +90,18 @@ public class TicketSystemCLI {
                 switch (actionChoice) {
                     case 1:
                         if (!isRunning) {
-                            startSystem(config, ticketPool);
+                            startSystem(config);
+                            LoggerService.log("System started.");
                         } else {
                             System.out.println("The system is already running.");
+                            LoggerService.log("System is already running.");
                         }
                         break;
 
                     case 2:
                         if (isRunning) {
                             stopSystem();
+                            LoggerService.log("System stopped.");
                         } else {
                             System.out.println("The system is not running.");
                         }
@@ -105,16 +112,26 @@ public class TicketSystemCLI {
                             stopSystem();
                         }
                         System.out.println("Exiting the system...");
+                        LoggerService.log("Exiting the system.");
                         scanner.close();
                         return;
 
                     default:
                         System.out.println("Invalid choice. Please try again.");
+                        LoggerService.log("Invalid menu choice.");
+                }
+
+                // Check if there are no tickets left, and notify user
+                if (ticketPool != null && ticketPool.getTotalTicketCount() == 0) {
+                    System.out.println("No tickets available. The system has no more tickets to sell.");
+                    LoggerService.log("No tickets available. The system has no more tickets to sell.");
+                    System.out.println("You can reset the system or exit.");
                 }
             }
         } catch (Exception e) {
             // Handle any unexpected errors
             System.out.println("An unexpected error occurred: " + e.getMessage());
+            LoggerService.log("An unexpected error occurred: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -133,7 +150,7 @@ public class TicketSystemCLI {
 
         boolean debug = false;
 
-        return new Configuration(totalTickets ,ticketsPerRelease, ticketReleaseInterval, customerRetrievalInterval, maxTicketCapacity, vendorCount, customerCount, debug);
+        return new Configuration(totalTickets, ticketsPerRelease, ticketReleaseInterval, customerRetrievalInterval, maxTicketCapacity, vendorCount, customerCount, debug);
     }
 
     // Helper function to get validated user input
@@ -162,8 +179,11 @@ public class TicketSystemCLI {
     }
 
     // Function to start the system (initialize and start vendor/customer threads)
-    private static void startSystem(Configuration config, TicketPool ticketPool) {
+    private static void startSystem(Configuration config) {
         isRunning = true;
+
+        // Initialize TicketPool
+        ticketPool = new TicketPool(config.getMaxTicketCapacity(), config.getTotalTickets(), config.isDebug());
 
         // Calculate tickets per vendor ( remainder handled by the last vendor)
         int totalTickets = config.getTotalTickets(); // Assume total tickets = tickets per release * vendor count
@@ -197,13 +217,12 @@ public class TicketSystemCLI {
         }
 
         System.out.println("System started! Vendors and customers are now active.");
+        LoggerService.log("System started! Vendors and customers are now active.");
     }
-
 
     // Function to stop the system (interrupt threads)
     private static void stopSystem() {
         isRunning = false;
-
         // Interrupt the threads
         for (Thread vendorThread : vendorThreads) {
             vendorThread.interrupt();  // Interrupt vendor thread
@@ -213,5 +232,6 @@ public class TicketSystemCLI {
         }
 
         System.out.println("System stopped successfully.");
+        LoggerService.log("System stopped successfully.");
     }
 }

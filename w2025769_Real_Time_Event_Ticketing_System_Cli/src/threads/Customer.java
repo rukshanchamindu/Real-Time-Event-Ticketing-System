@@ -1,6 +1,8 @@
 package threads;
+
 import core.TicketPool;
 import core.Ticket;
+import logger.LoggerService;
 
 public class Customer implements Runnable {
     private final TicketPool ticketPool;
@@ -16,36 +18,31 @@ public class Customer implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
-            synchronized (ticketPool) {  // Ensure synchronization with the ticket pool
-                // If no tickets are available, the customer will wait
-                while (ticketPool.getCurrentTicketCount() == 0) {
-                    try {
-//                        System.out.println("Customer " + customerId + " could not purchase a ticket (no tickets available).");
-                        ticketPool.wait();  // Wait for new tickets to be added
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();  // Handle thread interruption
-                    }
-                }
+        while (!Thread.currentThread().isInterrupted()) {
+            // Attempt to buy a ticket directly
+            Ticket ticket = ticketPool.removeTicket();
 
-                // Now that the customer is awake, attempt to buy a ticket
-                Ticket ticket = ticketPool.removeTicket();
-                if (ticket == null) {
-                    System.out.println("ERROR: Customer " + customerId + " could not purchase a ticket (ticket is null).");
-                } else {
-                    System.out.println("Customer " + customerId + " purchased: " + ticket);
-                }
+            if (ticket == null) {
+                // Log the case where no tickets are available
+                LoggerService.log("Customer " + customerId + " could not purchase a ticket (no tickets available).");
+                System.out.println("Stopping Customer thread: " + customerId + " as no tickets are available.");
+                break;  // Exit the loop when no tickets are available
+            } else {
+                // Log when a customer purchases a ticket
+                LoggerService.log("Customer " + customerId + " purchased: " + ticket);
+                System.out.println("Customer " + customerId + " purchased: " + ticket);
             }
 
             // Sleep for the specified retrieval interval before attempting to buy another ticket
             try {
-                Thread.sleep(retrievalInterval*1000);
+                Thread.sleep(retrievalInterval * 1000);  // Convert seconds to milliseconds
             } catch (InterruptedException e) {
+                // Log the interruption event
+                LoggerService.log("Customer " + customerId + " was interrupted.");
                 Thread.currentThread().interrupt();  // Handle interruption
-                // Once the vendor thread exits, log its termination
                 System.out.println("Customer " + customerId + " is no longer active.");
+                break;  // Exit the loop when interrupted
             }
         }
-
     }
 }
