@@ -70,8 +70,8 @@ public class TicketPool {
     }
 
     // Get the total tickets count
-    public synchronized int getTotalTicketCount() {
-        return totalTickets;
+    public synchronized String getReamningTicketCount() {
+        return String.valueOf(totalTickets);
     }
 
     // Method to generate a unique ticket ID

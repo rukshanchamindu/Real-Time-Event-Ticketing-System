@@ -23,14 +23,8 @@ public class TicketSystemController {
 
     // Endpoint to stop the system
     @PostMapping("/system/stop")
-    public Boolean stopSystem() {
+    public String stopSystem() {
         return ticketSystemService.stopSystem();
-    }
-
-    // Retrieve the last 100 logs stored in memory
-    @GetMapping("/recent")
-    public List<String> getRecentLogs() {
-        return LoggerService.getRecentLogs();  // Retrieve and return the last 100 logs
     }
 
     // Endpoint to load the configuration
@@ -43,6 +37,11 @@ public class TicketSystemController {
     @PostMapping("/config/set")
     public boolean setConfiguration(@RequestBody String configData) {
         return ticketSystemService.setConfiguration(configData);
+    }
+
+    @GetMapping("/system/getremaingticket")
+    public String getremaingTicket() {
+        return ticketSystemService.getremaingTicket();
     }
 
 }

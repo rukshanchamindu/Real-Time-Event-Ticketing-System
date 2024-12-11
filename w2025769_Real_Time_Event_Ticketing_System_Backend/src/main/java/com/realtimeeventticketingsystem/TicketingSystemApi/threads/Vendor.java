@@ -7,6 +7,7 @@ import com.realtimeeventticketingsystem.TicketingSystemApi.logger.LoggerService;
 public class Vendor implements Runnable {
     private final TicketPool ticketPool;
     private final String vendorId;          // Unique vendor identifier
+    private final int totalTickets;         // Remaining tickets the vendor got
     private int remainingTickets;           // Remaining tickets the vendor can release
     private final int ticketsPerRelease;    // Number of tickets the vendor releases at a time
     private final int releaseInterval;      // Interval (in seconds) at which tickets are released
@@ -16,9 +17,21 @@ public class Vendor implements Runnable {
                   int ticketsPerRelease, int releaseInterval) {
         this.ticketPool = ticketPool;
         this.vendorId = vendorId;
+        this.totalTickets = ticketsForThisVendor;
         this.remainingTickets = ticketsForThisVendor;
         this.ticketsPerRelease = ticketsPerRelease;
         this.releaseInterval = releaseInterval;
+    }
+
+    public String getVendorId() {
+        return vendorId;
+    }
+
+    public int getRemainingTickets() {
+        return remainingTickets;
+    }
+    public int getTotalTickets() {
+        return totalTickets;
     }
 
     @Override

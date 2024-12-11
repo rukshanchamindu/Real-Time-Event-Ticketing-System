@@ -9,10 +9,11 @@ import com.realtimeeventticketingsystem.TicketingSystemApi.core.TicketPool;
 import com.realtimeeventticketingsystem.TicketingSystemApi.threads.Vendor;
 import com.realtimeeventticketingsystem.TicketingSystemApi.threads.Customer;
 import com.realtimeeventticketingsystem.TicketingSystemApi.logger.LoggerService;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TicketSystemService {
@@ -22,6 +23,8 @@ public class TicketSystemService {
 
     private List<Thread> vendorThreads = new ArrayList<>();
     private List<Thread> customerThreads = new ArrayList<>();
+    private List<Customer> customersList = new ArrayList<>();
+    private List<Vendor> vendorsList = new ArrayList<>();
     private TicketPool ticketPool = null;
 
     // Method to start the system
@@ -48,6 +51,7 @@ public class TicketSystemService {
                 }
 
                 Vendor vendor = new Vendor(ticketPool, vendorId, ticketsForThisVendor, config.getTicketsPerRelease(), config.getTicketReleaseInterval());
+                vendorsList.add(vendor);
                 Thread vendorThread = new Thread(vendor, vendorId);
                 vendorThread.start();
                 vendorThreads.add(vendorThread);
@@ -57,6 +61,7 @@ public class TicketSystemService {
             for (int i = 0; i < config.getCustomerCount(); i++) {
                 String customerId = "Customer-" + (i + 1);
                 Customer customer = new Customer(ticketPool, customerId, config.getCustomerRetrievalInterval());
+                customersList.add(customer);
                 Thread customerThread = new Thread(customer, customerId);
                 customerThread.start();
                 customerThreads.add(customerThread);
@@ -73,8 +78,11 @@ public class TicketSystemService {
     }
 
     // Method to stop the system (interrupt threads)
-    public boolean stopSystem() {
+    public String stopSystem() {
         if (isRunning) {
+            // Generate sales report before stopping the system
+            String salesReport = generateSalesReport();  // Get the sales report as a JSON string
+
             // Interrupt vendor threads
             for (Thread vendorThread : vendorThreads) {
                 vendorThread.interrupt();
@@ -87,13 +95,59 @@ public class TicketSystemService {
 
             System.out.println("System stopped successfully.");
             LoggerService.log("System stopped successfully.");
+            LoggerService.wipeAllSessions();
             isRunning = false;
-            return true;
+
+            // Return the generated sales report
+            return salesReport;  // Return the sales report JSON
         } else {
             System.out.println("The system is not running.");
-            return false;
+            return null;  // If the system is not running, return null
         }
     }
+
+    // Method to generate sales report
+    public String generateSalesReport() {
+        // Create a map to hold the sales report data
+        Map<String, Object> salesReport = new HashMap<>();
+
+        // Add basic config info (like total tickets)
+        salesReport.put("totalTickets", config.getTotalTickets());
+
+        // Get the remaining tickets in the ticket pool
+        salesReport.put("remainingTicketsInPool", ticketPool.getReamningTicketCount());
+
+        // Add detailed customer purchase data
+        Map<String, Object> customerDetails = new HashMap<>();
+        for (Customer customer : customersList) {
+            Map<String, Object> customerData = new HashMap<>();
+            customerData.put("purchasedTickets", customer.getPurchasedTicketCount());
+            customerDetails.put(customer.getCustomerId(), customerData);
+        }
+        salesReport.put("customers", customerDetails);
+
+        // Optionally, add vendor details if necessary
+        Map<String, Object> vendorDetails = new HashMap<>();
+        for (Vendor vendor : vendorsList) {
+            Map<String, Object> vendorData = new HashMap<>();
+            vendorData.put("totalTicketsSold", vendor.getTotalTickets());  // Assume this method exists
+            vendorData.put("remainingTickets", vendor.getRemainingTickets());
+            vendorDetails.put(vendor.getVendorId(), vendorData);
+        }
+        salesReport.put("vendors", vendorDetails);
+
+        // Use Gson to convert the map to JSON
+        Gson gson = new Gson();
+        String reportJson = gson.toJson(salesReport);
+
+        return reportJson;  // Return the JSON report
+    }
+
+    public String getremaingTicket() {
+        return ticketPool.getReamningTicketCount();
+    }
+
+
 
     // Method to load configuration and return as JSON
     public String getConfiguration() {

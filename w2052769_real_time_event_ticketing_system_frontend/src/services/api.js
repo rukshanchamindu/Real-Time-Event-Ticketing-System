@@ -63,3 +63,14 @@ export const stopSystemAPI = async () => {
         throw error;  // Rethrow the error for further handling
     }
 };
+
+export const fetchRemainingTickets = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/system/getremaingticket`);
+        console.log('remaining tickets: ',response.data)
+        return response.data;  // Assuming the response is in the form { remainingTickets: number }
+    } catch (error) {
+        console.error('Error fetching remaining tickets:', error);
+        throw error;
+    }
+};

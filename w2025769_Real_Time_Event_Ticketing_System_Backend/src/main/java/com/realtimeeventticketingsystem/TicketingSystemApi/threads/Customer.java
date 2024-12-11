@@ -8,12 +8,22 @@ public class Customer implements Runnable {
     private final TicketPool ticketPool;
     private final String customerId;      // Unique customer identifier
     private final int retrievalInterval;  // Interval (in ms) at which customers attempt to buy tickets
+    private int purchasedTicketCount;     // Counter for purchased tickets
 
     // Constructor to initialize the Customer with necessary attributes
     public Customer(TicketPool ticketPool, String customerId, int retrievalInterval) {
         this.ticketPool = ticketPool;
         this.customerId = customerId;
         this.retrievalInterval = retrievalInterval;
+        this.purchasedTicketCount = 0;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public int getPurchasedTicketCount() {
+        return purchasedTicketCount;
     }
 
     @Override
@@ -28,6 +38,9 @@ public class Customer implements Runnable {
                 System.out.println("Stopping Customer thread: " + customerId + " as no tickets are available.");
                 break;  // Exit the loop when no tickets are available
             } else {
+                // Increment the purchased ticket count when a ticket is purchased
+                purchasedTicketCount++;
+
                 // Log when a customer purchases a ticket
                 LoggerService.log("Customer " + customerId + " purchased: " + ticket);
                 System.out.println("Customer " + customerId + " purchased: " + ticket);

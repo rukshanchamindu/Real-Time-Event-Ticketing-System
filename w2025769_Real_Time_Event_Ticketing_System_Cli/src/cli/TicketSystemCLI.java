@@ -29,8 +29,8 @@ public class TicketSystemCLI {
             System.out.println("\nDo you want to load an existing configuration or create a new one?");
             System.out.println("1. Load existing configuration");
             System.out.println("2. Create new configuration");
-            System.out.print("Enter your choice (1 or 2): ");
-            int choice = scanner.nextInt();
+//            System.out.print("Enter your choice (1 or 2): ");
+            int choice =  getValidatedInput(scanner, "Enter your choice (1 or 2): ", 1,2 );
             scanner.nextLine();
 
             // Use switch-case to handle user choice
@@ -83,8 +83,8 @@ public class TicketSystemCLI {
                 System.out.println("1. Start the system");
                 System.out.println("2. Stop the system");
                 System.out.println("3. Exit the system");
-                System.out.print("Enter your choice (1, 2, or 3): ");
-                int actionChoice = scanner.nextInt();
+//                System.out.print("Enter your choice (1, 2, or 3): ");
+                int actionChoice =  getValidatedInput(scanner, "Enter your choice (1, 2, or 3): ", 1, 3);
                 scanner.nextLine(); // Consume the newline character
 
                 switch (actionChoice) {
