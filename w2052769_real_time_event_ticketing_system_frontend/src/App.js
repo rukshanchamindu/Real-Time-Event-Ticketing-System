@@ -24,6 +24,8 @@ const App = () => {
   const [showSalesReport, setShowSalesReport] = useState(false); // Track if sales report should be shown
   const socketRef = useRef(null); // Reference for WebSocket connection
 
+  document.title = ` Ticketing System!`; 
+
   // Establish WebSocket connection with retry logic
   const createWebSocket = () => {
     const socket = new WebSocket('ws://localhost:8080/logs');

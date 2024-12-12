@@ -1,1 +1,1 @@
-{"totalTickets":100,"ticketsPerRelease":2,"ticketReleaseInterval":5,"customerRetrievalInterval":1,"maxTicketCapacity":10,"vendorCount":5,"customerCount":3,"debug":false}
+{"totalTickets":50,"ticketsPerRelease":2,"ticketReleaseInterval":2,"customerRetrievalInterval":2,"maxTicketCapacity":10,"vendorCount":4,"customerCount":3,"debug":false}
